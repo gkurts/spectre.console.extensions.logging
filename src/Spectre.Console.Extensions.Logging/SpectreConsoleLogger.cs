@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.CompilerServices;
+using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace Spectre.Console.Extensions.Logging
@@ -43,29 +45,39 @@ namespace Spectre.Console.Extensions.Logging
                     ? GetLevelMarkup(logLevel)
                     : string.Empty;
                 var categoryStr = _config.IncludeEventId
-                    ? _name + $"[grey][[{eventId.Id}]][/]"
+                    ? _name + $"[grey][[{eventId.Id}]]"
                     : _name;
 
-                if (!_config.SingleLine)
+                var sb = new StringBuilder();
+
+                sb.Append(prefix);
+
+                if (_config.IncludeDateTime)
                 {
-                    _console.MarkupLine(prefix + categoryStr);
-                    _console.MarkupLine(string.Empty.PadRight(6) + formatter(state, exception));
+                    sb.Append("[[").Append(DateTime.UtcNow.ToString()).Append("]] ");
                 }
-                else
+
+                sb.Append($"{categoryStr}");
+
+                if (_config.SingleLine)
                 {
-                    _console.MarkupLine(prefix + categoryStr + " " + formatter(state, exception));
+                    _console.MarkupLine($"[dim]{sb}:[/] {formatter(state, exception)}");
+                    return;
                 }
+
+                _console.MarkupLine(sb.ToString());
+                _console.MarkupLine($"\t{formatter(state, exception)}");
             }
         }
         private string GetLevelMarkup(LogLevel level) {
             return level switch
             {
-                LogLevel.Trace => "[italic dim grey]trce[/]: ",
-                LogLevel.Debug => "[dim grey]dbug[/]: ",
-                LogLevel.Information => "[dim deepskyblue2]info[/]: ",
-                LogLevel.Warning => "[bold orange3]warn[/]: ",
-                LogLevel.Error => "[bold red]fail[/]: ",
-                LogLevel.Critical => "[bold underline red on white]crit[/]: ",
+                LogLevel.Trace => "[italic dim grey]TRACE[/]: ",
+                LogLevel.Debug => "[dim grey]DEBUG[/]: ",
+                LogLevel.Information => "[dim deepskyblue2]INFO[/]: ",
+                LogLevel.Warning => "[bold orange3]WARN[/]: ",
+                LogLevel.Error => "[bold red]ERROR[/]: ",
+                LogLevel.Critical => "[bold underline red on white]CRITICAL[/]: ",
                 _ => throw new ArgumentOutOfRangeException(nameof(level))
             };
         }
